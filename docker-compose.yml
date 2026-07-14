@@ -1,0 +1,9 @@
+services:
+  tazartu-dashboard:
+    build: .
+    container_name: tazartu-dashboard
+    restart: unless-stopped
+    ports:
+      - "10.140.81.38:8080:3000"
+    volumes:
+      - ./data:/app/data:z
