@@ -5,6 +5,7 @@ import {
   RadioTower,
   Gauge,
   ClipboardList,
+  Construction,
   BarChart3,
   TrendingUp,
   Boxes,
@@ -38,6 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Программа",
     items: [
       { href: "/migration", label: "Миграция абонентов", icon: ArrowLeftRight },
+      { href: "/construction", label: "Строительство оптики", icon: Construction },
       { href: "/dslam", label: "Демонтаж DSLAM", icon: RadioTower },
       { href: "/speed", label: "Скорость интернета", icon: Gauge },
       { href: "/orders", label: "Заказы на переключение", icon: ClipboardList },

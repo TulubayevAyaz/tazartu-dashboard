@@ -2,11 +2,14 @@
 
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
+import { CountUpValue } from "./CountUpValue";
 
 interface KpiCardProps {
   label: string;
   value: string;
+  numericValue?: number;
+  valueFormatter?: (n: number) => string;
   sublabel?: string;
   icon: LucideIcon;
   trend?: { value: string; positive: boolean };
@@ -21,7 +24,17 @@ const ACCENTS = {
   danger: "from-danger/15 to-danger/5 text-danger",
 };
 
-export function KpiCard({ label, value, sublabel, icon: Icon, trend, accent = "brand", index = 0 }: KpiCardProps) {
+export function KpiCard({
+  label,
+  value,
+  numericValue,
+  valueFormatter = formatNumber,
+  sublabel,
+  icon: Icon,
+  trend,
+  accent = "brand",
+  index = 0,
+}: KpiCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -41,7 +54,9 @@ export function KpiCard({ label, value, sublabel, icon: Icon, trend, accent = "b
         )}
       </div>
       <div className="min-w-0">
-        <div className="text-[26px] font-semibold tracking-tight leading-tight truncate">{value}</div>
+        <div className="text-[26px] font-semibold tracking-tight leading-tight truncate">
+          {numericValue !== undefined ? <CountUpValue value={numericValue} formatter={valueFormatter} /> : value}
+        </div>
         <div className="text-[13px] text-muted mt-0.5 truncate">{label}</div>
         {sublabel && <div className="text-[11.5px] text-muted/80 mt-1 truncate">{sublabel}</div>}
       </div>
