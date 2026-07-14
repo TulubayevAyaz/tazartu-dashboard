@@ -3,9 +3,9 @@
 import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "framer-motion";
-import { UploadCloud, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet } from "lucide-react";
+import { UploadCloud, CheckCircle2, XCircle, RefreshCw, FileSpreadsheet, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { useUploadSwapFile, useRefreshSwapDetail } from "@/lib/swap/useSwapData";
+import { useUploadSwapFile, useRefreshSwapDetail, useClearSwapData } from "@/lib/swap/useSwapData";
 import { isLikelySummarySheet } from "@/lib/swap/parseSummarySheet";
 import type { SwapDetailMeta, SwapSnapshotMeta } from "@/lib/types/swap";
 
@@ -18,10 +18,22 @@ export function SwapUploadPanel({ meta, detailMeta }: { meta: SwapSnapshotMeta |
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = useUploadSwapFile();
   const refreshDetail = useRefreshSwapDetail();
+  const clearData = useClearSwapData();
+
+  function handleClearClick() {
+    if (!confirmingClear) {
+      setConfirmingClear(true);
+      setTimeout(() => setConfirmingClear(false), 4000);
+      return;
+    }
+    setConfirmingClear(false);
+    clearData.mutate();
+  }
 
   async function handleFile(f: File) {
     setError(null);
@@ -154,6 +166,18 @@ export function SwapUploadPanel({ meta, detailMeta }: { meta: SwapSnapshotMeta |
               }}
             />
           </label>
+          <button
+            onClick={handleClearClick}
+            disabled={(!meta && !detailMeta) || clearData.isPending}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-medium transition-colors disabled:opacity-50 ${
+              confirmingClear
+                ? "border-danger bg-danger/10 text-danger hover:bg-danger/20"
+                : "border-border hover:bg-surface-2"
+            }`}
+          >
+            <Trash2 size={13} className={clearData.isPending ? "animate-pulse" : ""} />
+            {clearData.isPending ? "Стираю…" : confirmingClear ? "Точно стереть?" : "Стереть данные"}
+          </button>
           {file && (
             <button
               onClick={onSubmit}
@@ -187,6 +211,17 @@ export function SwapUploadPanel({ meta, detailMeta }: { meta: SwapSnapshotMeta |
           >
             <XCircle size={16} />
             {error}
+          </motion.div>
+        )}
+        {clearData.isError && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="mt-3 flex items-center gap-2 text-[13px] text-danger font-medium"
+          >
+            <XCircle size={16} />
+            {(clearData.error as Error).message}
           </motion.div>
         )}
       </AnimatePresence>

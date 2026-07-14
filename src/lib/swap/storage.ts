@@ -62,3 +62,8 @@ export async function saveDetail(parsed: ParsedDetail) {
   await persist(dataset);
   return dataset;
 }
+
+export async function clearDataset() {
+  await persist(EMPTY_SWAP_DATASET);
+  return EMPTY_SWAP_DATASET;
+}
