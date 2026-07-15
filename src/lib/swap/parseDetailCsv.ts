@@ -5,6 +5,7 @@ const COL = {
   contractor: "Подрядчик (ДУП)",
   project: "Наименование проекта",
   region: "Область (ДРТР)",
+  city: "Город (ДРТР)",
   plannedPorts: "Кол-во портов (ДРТР)",
   acceptedPorts: "Кол-во фактически принятых в эксплуатацию портов (ОДС)",
   reason: "Причина исключения/замена (ДРТР)",
@@ -97,6 +98,7 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
   const idxPlanned = idx(COL.plannedPorts);
   const idxAccepted = idx(COL.acceptedPorts);
   const idxReason = idx(COL.reason);
+  const idxCity = idx(COL.city);
 
   const missing = ([[COL.contractor, idxContractor], [COL.region, idxRegion], [COL.plannedPorts, idxPlanned]] as const)
     .filter(([, i]) => i === -1)
@@ -109,7 +111,14 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
 
   const contractorMap = new Map<
     string,
-    { planned: number; accepted: number; count: number; reasons: Map<string, number>; projects: Set<string> }
+    {
+      planned: number;
+      accepted: number;
+      count: number;
+      reasons: Map<string, number>;
+      projects: Set<string>;
+      cities: Map<string, number>;
+    }
   >();
   const regionMap = new Map<string, { planned: number; accepted: number }>();
   const projects = new Set<string>();
@@ -122,10 +131,11 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
     const accepted = idxAccepted !== -1 ? toNumber(r[idxAccepted]) : 0;
     const reason = idxReason !== -1 ? (r[idxReason] ?? "").trim() : "";
     const project = idxProject !== -1 ? (r[idxProject] ?? "").trim() : "";
+    const city = idxCity !== -1 ? (r[idxCity] ?? "").trim() : "";
     if (project) projects.add(project);
 
     if (!contractorMap.has(contractor)) {
-      contractorMap.set(contractor, { planned: 0, accepted: 0, count: 0, reasons: new Map(), projects: new Set() });
+      contractorMap.set(contractor, { planned: 0, accepted: 0, count: 0, reasons: new Map(), projects: new Set(), cities: new Map() });
     }
     const c = contractorMap.get(contractor)!;
     c.planned += planned;
@@ -136,6 +146,7 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
       globalReasons.set(reason, (globalReasons.get(reason) ?? 0) + 1);
     }
     if (project) c.projects.add(project);
+    if (city) c.cities.set(city, (c.cities.get(city) ?? 0) + 1);
 
     if (!regionMap.has(region)) regionMap.set(region, { planned: 0, accepted: 0 });
     const rg = regionMap.get(region)!;
@@ -156,6 +167,7 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
         .slice(0, 5)
         .map(([reason, count]) => ({ reason, count })),
       projects: [...v.projects].sort(),
+      cities: [...v.cities.entries()].sort((a, b) => b[1] - a[1]).map(([city]) => city),
     }))
     .sort((a, b) => b.plannedPorts - a.plannedPorts);
 

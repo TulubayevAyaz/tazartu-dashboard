@@ -14,6 +14,12 @@ function barColor(pct: number): string {
   return "bg-danger";
 }
 
+function formatCities(cities: string[]): string {
+  if (cities.length === 0) return "—";
+  if (cities.length <= 2) return cities.join(", ");
+  return `${cities.slice(0, 2).join(", ")} +${cities.length - 2}`;
+}
+
 export function ContractorTable({ rows }: { rows: ContractorRow[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -36,10 +42,11 @@ export function ContractorTable({ rows }: { rows: ContractorRow[] }) {
 
   return (
     <div className="overflow-x-auto -mx-1">
-      <table className="w-full text-[13px] min-w-[880px]">
+      <table className="w-full text-[13px] min-w-[980px]">
         <thead>
           <tr className="text-left text-muted border-b border-border">
             <th className="px-3 py-2 font-medium">Подрядчик</th>
+            <th className="px-3 py-2 font-medium">Город</th>
             <th className="px-3 py-2 font-medium">Объектов</th>
             <th className="px-3 py-2 font-medium">План (портов)</th>
             <th className="px-3 py-2 font-medium">Принято</th>
@@ -65,6 +72,11 @@ export function ContractorTable({ rows }: { rows: ContractorRow[] }) {
                   )}
                 >
                   <td className="px-3 py-2.5 font-medium">{r.contractor}</td>
+                  <td className="px-3 py-2.5 text-muted max-w-[160px]">
+                    <span className="truncate inline-block max-w-[150px] align-bottom" title={r.cities.join(", ") || "—"}>
+                      {formatCities(r.cities)}
+                    </span>
+                  </td>
                   <td className="px-3 py-2.5 text-muted">{r.objectCount}</td>
                   <td className="px-3 py-2.5">{formatNumber(r.plannedPorts)}</td>
                   <td className="px-3 py-2.5">{formatNumber(r.acceptedPorts)}</td>
@@ -110,7 +122,7 @@ export function ContractorTable({ rows }: { rows: ContractorRow[] }) {
                       exit={{ opacity: 0 }}
                       className="border-b border-border/60 last:border-0 bg-surface-2/40"
                     >
-                      <td colSpan={7} className="px-3 py-3">
+                      <td colSpan={8} className="px-3 py-3">
                         <div className="text-[11.5px] font-medium text-muted mb-2">
                           Топ-{r.topDelayReasons.length} причин — {r.contractor}
                         </div>

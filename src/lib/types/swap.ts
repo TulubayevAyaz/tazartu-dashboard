@@ -57,6 +57,7 @@ export interface ContractorRow {
   objectCount: number;
   topDelayReasons: DelayReasonCount[];
   projects: string[];
+  cities: string[];
 }
 
 export interface RegionSwitchRow {
