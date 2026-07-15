@@ -153,7 +153,7 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
       objectCount: v.count,
       topDelayReasons: [...v.reasons.entries()]
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
+        .slice(0, 5)
         .map(([reason, count]) => ({ reason, count })),
       projects: [...v.projects].sort(),
     }))
