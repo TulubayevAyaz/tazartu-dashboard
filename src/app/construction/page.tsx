@@ -21,6 +21,7 @@ import { SwapUploadPanel } from "@/components/swap/SwapUploadPanel";
 import { SwapFilterBar } from "@/components/swap/SwapFilterBar";
 import { ContractorTable } from "@/components/swap/ContractorTable";
 import { DelayReasonsCard } from "@/components/swap/DelayReasonsCard";
+import { RisksCard } from "@/components/swap/RisksCard";
 import { useSwapData } from "@/lib/swap/useSwapData";
 import { formatNumber, formatPercent } from "@/lib/utils";
 import type { MetricSplit } from "@/lib/types/swap";
@@ -134,7 +135,7 @@ function ConstructionPageInner() {
               label="СМР завершено"
               value={formatNumber(kpiSource.smr.total)}
               numericValue={kpiSource.smr.total}
-              sublabel={`${pctOf(kpiSource.smr.total, kpiSource.planBP.total)} от плана БП`}
+              sublabel={`${pctOf(kpiSource.smr.total, kpiSource.planDUP.total)} от плана ДУП/ОДС`}
               accent="warning"
             />
             <KpiCard
@@ -143,7 +144,7 @@ function ConstructionPageInner() {
               label="Принято в эксплуатацию"
               value={formatNumber(kpiSource.accepted.total)}
               numericValue={kpiSource.accepted.total}
-              sublabel={`${pctOf(kpiSource.accepted.total, kpiSource.planBP.total)} от плана БП`}
+              sublabel={`${pctOf(kpiSource.accepted.total, kpiSource.planDUP.total)} от плана ДУП/ОДС`}
               accent="success"
             />
             <KpiCard
@@ -202,6 +203,14 @@ function ConstructionPageInner() {
                 <Bar dataKey="accepted" name="Принято в экспл." fill="var(--success)" radius={[6, 6, 0, 0]} />
               </ComposedChart>
             </ResponsiveContainer>
+          </Card>
+
+          <Card
+            title="Риски — отставание от графика"
+            subtitle="Подрядчики и регионы, которые выполнили меньше 50% плана ДУП/ОДС, с наибольшим остатком портов"
+            className="mt-5"
+          >
+            <RisksCard contractors={dataset?.contractors ?? []} regions={dataset?.regions ?? []} />
           </Card>
 
           <Card
