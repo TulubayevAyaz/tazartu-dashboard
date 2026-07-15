@@ -204,19 +204,17 @@ function ConstructionPageInner() {
             </ResponsiveContainer>
           </Card>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 mt-5">
-            <Card
-              title="Реестр подрядных организаций"
-              subtitle="Сколько построено, сколько осталось, причина отставания от плана"
-              className="xl:col-span-2"
-            >
-              <ContractorTable rows={filteredContractors} />
-            </Card>
+          <Card
+            title="Реестр подрядных организаций"
+            subtitle="Сколько построено, сколько осталось, причина отставания от плана"
+            className="mt-5"
+          >
+            <ContractorTable rows={filteredContractors} />
+          </Card>
 
-            <Card title="Топ причин отставания" subtitle="По всем подрядчикам и объектам">
-              <DelayReasonsCard reasons={dataset?.topDelayReasons ?? []} />
-            </Card>
-          </div>
+          <Card title="Топ причин отставания" subtitle="По всем подрядчикам и объектам" className="mt-5">
+            <DelayReasonsCard reasons={dataset?.topDelayReasons ?? []} />
+          </Card>
 
           <p className="text-[12.5px] text-muted mt-4">
             Сводка: снапшот «{dataset?.meta?.sheetDateLabel}»
