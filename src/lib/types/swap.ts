@@ -89,6 +89,7 @@ export interface SwapDataset {
   contractors: ContractorRow[];
   regions: RegionSwitchRow[];
   projects: string[];
+  topDelayReasons: DelayReasonCount[];
   warnings: string[];
 }
 
@@ -101,5 +102,6 @@ export const EMPTY_SWAP_DATASET: SwapDataset = {
   contractors: [],
   regions: [],
   projects: [],
+  topDelayReasons: [],
   warnings: [],
 };

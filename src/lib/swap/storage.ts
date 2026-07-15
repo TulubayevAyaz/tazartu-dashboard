@@ -58,6 +58,7 @@ export async function saveDetail(parsed: ParsedDetail) {
     contractors: parsed.contractors,
     regions: parsed.regions,
     projects: parsed.projects,
+    topDelayReasons: parsed.topDelayReasons,
   };
   await persist(dataset);
   return dataset;

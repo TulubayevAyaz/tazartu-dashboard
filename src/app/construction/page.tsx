@@ -20,6 +20,7 @@ import { Card } from "@/components/ui/Card";
 import { SwapUploadPanel } from "@/components/swap/SwapUploadPanel";
 import { SwapFilterBar } from "@/components/swap/SwapFilterBar";
 import { ContractorTable } from "@/components/swap/ContractorTable";
+import { DelayReasonsCard } from "@/components/swap/DelayReasonsCard";
 import { useSwapData } from "@/lib/swap/useSwapData";
 import { formatNumber, formatPercent } from "@/lib/utils";
 import type { MetricSplit } from "@/lib/types/swap";
@@ -203,13 +204,19 @@ function ConstructionPageInner() {
             </ResponsiveContainer>
           </Card>
 
-          <Card
-            title="Реестр подрядных организаций"
-            subtitle="Сколько построено, сколько осталось, причина отставания от плана"
-            className="mt-5"
-          >
-            <ContractorTable rows={filteredContractors} />
-          </Card>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 mt-5">
+            <Card
+              title="Реестр подрядных организаций"
+              subtitle="Сколько построено, сколько осталось, причина отставания от плана"
+              className="xl:col-span-2"
+            >
+              <ContractorTable rows={filteredContractors} />
+            </Card>
+
+            <Card title="Топ причин отставания" subtitle="По всем подрядчикам и объектам">
+              <DelayReasonsCard reasons={dataset?.topDelayReasons ?? []} />
+            </Card>
+          </div>
 
           <p className="text-[12.5px] text-muted mt-4">
             Сводка: снапшот «{dataset?.meta?.sheetDateLabel}»

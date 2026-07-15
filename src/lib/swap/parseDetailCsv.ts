@@ -1,4 +1,4 @@
-import type { ContractorRow, RegionSwitchRow } from "@/lib/types/swap";
+import type { ContractorRow, DelayReasonCount, RegionSwitchRow } from "@/lib/types/swap";
 import { SwapParseError } from "./parseSummarySheet";
 
 const COL = {
@@ -14,6 +14,7 @@ export interface ParsedDetail {
   contractors: ContractorRow[];
   regions: RegionSwitchRow[];
   projects: string[];
+  topDelayReasons: DelayReasonCount[];
   objectCount: number;
 }
 
@@ -112,6 +113,7 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
   >();
   const regionMap = new Map<string, { planned: number; accepted: number }>();
   const projects = new Set<string>();
+  const globalReasons = new Map<string, number>();
 
   for (const r of dataRows) {
     const contractor = (r[idxContractor] ?? "").trim() || "Не указан";
@@ -129,7 +131,10 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
     c.planned += planned;
     c.accepted += accepted;
     c.count += 1;
-    if (reason) c.reasons.set(reason, (c.reasons.get(reason) ?? 0) + 1);
+    if (reason) {
+      c.reasons.set(reason, (c.reasons.get(reason) ?? 0) + 1);
+      globalReasons.set(reason, (globalReasons.get(reason) ?? 0) + 1);
+    }
     if (project) c.projects.add(project);
 
     if (!regionMap.has(region)) regionMap.set(region, { planned: 0, accepted: 0 });
@@ -163,5 +168,10 @@ export function parseDetailCsv(csvText: string): ParsedDetail {
     }))
     .sort((a, b) => b.plannedPorts - a.plannedPorts);
 
-  return { contractors, regions, projects: [...projects].sort(), objectCount: dataRows.length };
+  const topDelayReasons: DelayReasonCount[] = [...globalReasons.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([reason, count]) => ({ reason, count }));
+
+  return { contractors, regions, projects: [...projects].sort(), topDelayReasons, objectCount: dataRows.length };
 }
