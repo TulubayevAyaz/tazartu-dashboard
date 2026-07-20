@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
+  Flag,
   ArrowLeftRight,
   RadioTower,
   Gauge,
@@ -38,6 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Программа",
     items: [
+      { href: "/tazartu-2026", label: "Тазарту 2026", icon: Flag },
       { href: "/migration", label: "Миграция абонентов", icon: ArrowLeftRight },
       { href: "/construction", label: "Строительство оптики", icon: Construction },
       { href: "/dslam", label: "Демонтаж DSLAM", icon: RadioTower },
