@@ -32,12 +32,19 @@ function pctOf(num: number, denom: number): string {
   return denom > 0 ? formatPercent((num / denom) * 100) : "—";
 }
 
+function pick(split: MetricSplit, method: string): number {
+  if (method === "ЗНК") return split.znk;
+  if (method === "SWAP") return split.swap;
+  return split.total;
+}
+
 function ConstructionPageInner() {
   const { data: dataset, isLoading } = useSwapData();
   const searchParams = useSearchParams();
 
   const project = searchParams.get("project") ?? "";
   const category = searchParams.get("category") ?? "";
+  const method = searchParams.get("method") ?? "";
   const year = searchParams.get("year") ?? "";
   const month = searchParams.get("month") ?? "";
   const region = searchParams.get("region") ?? "";
@@ -51,17 +58,27 @@ function ConstructionPageInner() {
     return category ? categories.filter((c) => c.label === category) : categories;
   }, [dataset, category]);
 
+  const categoryChartData = useMemo(
+    () =>
+      filteredCategories.map((c) => ({
+        label: c.label,
+        planBP: pick(c.planBP, method),
+        planDUP: pick(c.planDUP, method),
+      })),
+    [filteredCategories, method],
+  );
+
   const filteredMonthly = useMemo(() => {
     const monthly = dataset?.monthly ?? [];
     return monthly
       .filter((m) => (!year || String(m.year) === year) && (!month || m.month === month))
       .map((m) => ({
         label: `${m.month} ${m.year}${m.method === "own" ? " · хоз" : ""}`,
-        planDUP: m.planDUP.total,
-        smr: m.smr.total,
-        accepted: m.accepted.total,
+        planDUP: pick(m.planDUP, method),
+        smr: pick(m.smr, method),
+        accepted: pick(m.accepted, method),
       }));
-  }, [dataset, year, month]);
+  }, [dataset, year, month, method]);
 
   const filteredRegions = useMemo(() => {
     const regions = dataset?.regions ?? [];
@@ -92,6 +109,12 @@ function ConstructionPageInner() {
     );
   }
 
+  const planBP = kpiSource ? pick(kpiSource.planBP, method) : 0;
+  const planDUP = kpiSource ? pick(kpiSource.planDUP, method) : 0;
+  const smr = kpiSource ? pick(kpiSource.smr, method) : 0;
+  const accepted = kpiSource ? pick(kpiSource.accepted, method) : 0;
+  const delta = kpiSource ? pick(kpiSource.delta, method) : 0;
+
   return (
     <div>
       <div className="rounded-[24px] bg-gradient-to-r from-brand/10 via-brand-2/5 to-transparent px-1 pt-1 -mx-1">
@@ -116,16 +139,16 @@ function ConstructionPageInner() {
               index={0}
               icon={Target}
               label="План БП (утверждённый)"
-              value={formatNumber(kpiSource.planBP.total)}
-              numericValue={kpiSource.planBP.total}
+              value={formatNumber(planBP)}
+              numericValue={planBP}
               accent="brand"
             />
             <KpiCard
               index={1}
               icon={GitBranch}
               label="План ДУП + ОДС"
-              value={formatNumber(kpiSource.planDUP.total)}
-              numericValue={kpiSource.planDUP.total}
+              value={formatNumber(planDUP)}
+              numericValue={planDUP}
               sublabel="график строительства"
               accent="brand"
             />
@@ -133,28 +156,28 @@ function ConstructionPageInner() {
               index={2}
               icon={Hammer}
               label="СМР завершено"
-              value={formatNumber(kpiSource.smr.total)}
-              numericValue={kpiSource.smr.total}
-              sublabel={`${pctOf(kpiSource.smr.total, kpiSource.planDUP.total)} от плана ДУП/ОДС`}
+              value={formatNumber(smr)}
+              numericValue={smr}
+              sublabel={`${pctOf(smr, planDUP)} от плана ДУП/ОДС`}
               accent="warning"
             />
             <KpiCard
               index={3}
               icon={ClipboardCheck}
               label="Принято в эксплуатацию"
-              value={formatNumber(kpiSource.accepted.total)}
-              numericValue={kpiSource.accepted.total}
-              sublabel={`${pctOf(kpiSource.accepted.total, kpiSource.planDUP.total)} от плана ДУП/ОДС`}
+              value={formatNumber(accepted)}
+              numericValue={accepted}
+              sublabel={`${pctOf(accepted, planDUP)} от плана ДУП/ОДС`}
               accent="success"
             />
             <KpiCard
               index={4}
               icon={AlertTriangle}
               label="Приёмо-сдаточный этап"
-              value={`${kpiSource.delta.total > 0 ? "+" : ""}${formatNumber(kpiSource.delta.total)}`}
-              numericValue={kpiSource.delta.total}
+              value={`${delta > 0 ? "+" : ""}${formatNumber(delta)}`}
+              numericValue={delta}
               sublabel="СМР завершено, но не принято"
-              accent={kpiSource.delta.total < 0 ? "danger" : "success"}
+              accent={delta < 0 ? "danger" : "success"}
             />
           </div>
 
@@ -163,14 +186,14 @@ function ConstructionPageInner() {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             <Card title="Разбивка План БП/ДУП по проектам" subtitle="План БП vs план ДУП/ОДС по категориям">
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={filteredCategories} margin={{ left: -12 }}>
+                <BarChart data={categoryChartData} margin={{ left: -12 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={0} />
                   <YAxis tick={{ fontSize: 12, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={48} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="planBP.total" name="План БП" fill="var(--border)" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="planDUP.total" name="План ДУП/ОДС" fill="var(--brand)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="planBP" name="План БП" fill="var(--border)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="planDUP" name="План ДУП/ОДС" fill="var(--brand)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
