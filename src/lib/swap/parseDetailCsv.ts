@@ -19,7 +19,7 @@ export interface ParsedDetail {
   objectCount: number;
 }
 
-function parseCsv(text: string): string[][] {
+export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";

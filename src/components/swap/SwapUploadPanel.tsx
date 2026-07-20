@@ -88,8 +88,8 @@ export function SwapUploadPanel({ meta, detailMeta }: { meta: SwapSnapshotMeta |
       title="Обновление данных"
       subtitle={
         meta
-          ? `Сводка: ${meta.sheetDateLabel} · обновлено ${new Date(meta.parsedAt).toLocaleString("ru-RU")}`
-          : "Сводные данные ещё не загружены — загрузите экспорт из Google Таблицы"
+          ? `План БП/ДУП — из файла «${meta.sourceFileName}» (лист «${meta.sheetDateLabel}»), загружено ${new Date(meta.parsedAt).toLocaleString("ru-RU")}`
+          : "План БП/ДУП ещё не загружен — загрузите экспорт из Google Таблицы вручную (эти цифры автоматически не приходят)"
       }
       actions={
         <div className="flex flex-col items-end gap-1">
@@ -102,8 +102,9 @@ export function SwapUploadPanel({ meta, detailMeta }: { meta: SwapSnapshotMeta |
             Обновить по подрядчикам
           </button>
           {detailMeta && (
-            <span className="text-[11px] text-muted">
-              {detailMeta.objectCount} объектов · {new Date(detailMeta.fetchedAt).toLocaleString("ru-RU")}
+            <span className="text-[11px] text-muted text-right max-w-[220px]">
+              СМР/Принято/реестр — автоматически из Google Таблицы · {detailMeta.objectCount} объектов с подрядчиком · сервер забрал
+              данные {new Date(detailMeta.fetchedAt).toLocaleString("ru-RU")}
             </span>
           )}
           {refreshDetail.isError && <span className="text-[11px] text-danger">{(refreshDetail.error as Error).message}</span>}

@@ -1,7 +1,20 @@
 import { getDb } from "./db";
-import { EMPTY_SWAP_DATASET, type SwapDataset, type MetricSplit } from "@/lib/types/swap";
+import { EMPTY_SWAP_DATASET, type SwapDataset, type SwapTotals, type MetricSplit } from "@/lib/types/swap";
 import type { ParsedSummary } from "./parseSummarySheet";
 import type { ParsedDetail } from "./parseDetailCsv";
+import type { ComputedConstructionSummary } from "./computeConstructionSummary";
+
+const ZERO: MetricSplit = { total: 0, znk: 0, swap: 0 };
+const sumSplit = (a: MetricSplit, b: MetricSplit): MetricSplit => ({
+  total: a.total + b.total,
+  znk: a.znk + b.znk,
+  swap: a.swap + b.swap,
+});
+const subSplit = (a: MetricSplit, b: MetricSplit): MetricSplit => ({
+  total: a.total - b.total,
+  znk: a.znk - b.znk,
+  swap: a.swap - b.swap,
+});
 
 function splitFromRow(row: Record<string, unknown>, prefix: string): MetricSplit {
   return {
@@ -307,7 +320,85 @@ export async function saveDetail(parsed: ParsedDetail) {
   return dataset;
 }
 
+const ROLLUP_LABEL = "Стройка ДУП";
+const ROLLUP_PARTS = ["В рамках СКП ГТС", "Прочие проекты"];
+
+// Автоматически посчитанные СМР/Принято/Приёмо-сдаточный по категориям (см. computeConstructionSummary.ts)
+// сливаются с уже сохранённым Планом БП/ДУП (он не выводится из detail-CSV, вводится отдельно xlsx-загрузкой)
+// и с категорией "СКП СТС хоз.способ" (тоже не выводится из detail-CSV, остаётся ручной).
+export async function saveComputedSummary(computed: ComputedConstructionSummary) {
+  const current = await readDataset();
+
+  const mergedCategories = [...current.categories];
+  for (const cat of computed.categories) {
+    const i = mergedCategories.findIndex((c) => c.label === cat.label);
+    if (i === -1) {
+      mergedCategories.push(cat);
+    } else {
+      mergedCategories[i] = { ...mergedCategories[i], smr: cat.smr, accepted: cat.accepted, delta: cat.delta };
+    }
+  }
+
+  const rollupParts = ROLLUP_PARTS.map((label) => mergedCategories.find((c) => c.label === label));
+  if (rollupParts.every(Boolean)) {
+    const [a, b] = rollupParts as [(typeof mergedCategories)[number], (typeof mergedCategories)[number]];
+    const rollup = {
+      label: ROLLUP_LABEL,
+      planBP: sumSplit(a.planBP, b.planBP),
+      planDUP: sumSplit(a.planDUP, b.planDUP),
+      smr: sumSplit(a.smr, b.smr),
+      accepted: sumSplit(a.accepted, b.accepted),
+      delta: sumSplit(a.delta, b.delta),
+    };
+    const i = mergedCategories.findIndex((c) => c.label === ROLLUP_LABEL);
+    if (i === -1) mergedCategories.push(rollup);
+    else mergedCategories[i] = rollup;
+  }
+
+  const hoz = mergedCategories.find((c) => c.label === "СКП СТС хоз.способ");
+  const autoSmr = computed.categories.reduce((acc, c) => sumSplit(acc, c.smr), ZERO);
+  const autoAccepted = computed.categories.reduce((acc, c) => sumSplit(acc, c.accepted), ZERO);
+  const grandSmr = sumSplit(autoSmr, hoz?.smr ?? ZERO);
+  const grandAccepted = sumSplit(autoAccepted, hoz?.accepted ?? ZERO);
+  const grandDelta = subSplit(grandSmr, grandAccepted);
+
+  const totals: SwapTotals = {
+    planBP: current.totals?.planBP ?? ZERO,
+    planDUP: current.totals?.planDUP ?? ZERO,
+    sales: current.totals?.sales ?? ZERO,
+    smr: grandSmr,
+    accepted: grandAccepted,
+    delta: grandDelta,
+  };
+
+  const mergedMonthly = [...current.monthly];
+  for (const point of computed.monthly) {
+    const i = mergedMonthly.findIndex(
+      (m) => m.year === point.year && m.monthIndex === point.monthIndex && m.method === point.method,
+    );
+    if (i === -1) {
+      mergedMonthly.push(point);
+    } else {
+      mergedMonthly[i] = { ...mergedMonthly[i], smr: point.smr, accepted: point.accepted, delta: point.delta };
+    }
+  }
+
+  const dataset: SwapDataset = { ...current, totals, categories: mergedCategories, monthly: mergedMonthly };
+  await persist(dataset);
+  return dataset;
+}
+
+// "Стереть данные" чистит только то, что приходит из детализации/CSV (реестр подрядчиков, детализация,
+// подкатегории СМР/Принято) — но НЕ трогает План БП/ДУП, потому что он берётся не из этой таблицы и
+// меняется примерно раз в год. После очистки "Обновить по подрядчикам" сам восстановит СМР/Принято.
 export async function clearDataset() {
-  await persist(EMPTY_SWAP_DATASET);
-  return EMPTY_SWAP_DATASET;
+  const current = await readDataset();
+  const dataset: SwapDataset = {
+    ...EMPTY_SWAP_DATASET,
+    meta: current.meta,
+    totals: current.totals ? { ...current.totals, smr: ZERO, accepted: ZERO, delta: ZERO } : null,
+    categories: current.categories.map((c) => ({ ...c, smr: ZERO, accepted: ZERO, delta: ZERO })),
+  };
+  await persist(dataset);
+  return dataset;
 }
